@@ -46,7 +46,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(__linux__) || defined(__APPLE__)
+/* Android defines __linux__ and ships execinfo.h at every API level, but only
+ * declares backtrace() from API 33, so the platform test alone is not enough.
+ * PJ_HAS_EXECINFO_H is the probe for exactly that; when it is absent -- a build
+ * without autoconf or CMake -- fall back to the platform test.
+ */
+#if (defined(__linux__) || defined(__APPLE__)) && \
+    (!defined(PJ_HAS_EXECINFO_H) || PJ_HAS_EXECINFO_H != 0)
 #  include <execinfo.h>
 #  include <signal.h>
 #  include <unistd.h>
