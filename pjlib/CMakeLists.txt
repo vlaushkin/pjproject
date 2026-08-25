@@ -490,7 +490,13 @@ block(SCOPE_FOR VARIABLES)
 
   include(CheckSymbolExists)
   check_symbol_exists(localtime_r time.h PJ_HAS_LOCALTIME_R)
-  check_symbol_exists(getifaddrs ifaddrs.h PJ_HAS_IFADDRS_H)
+  # Android ships ifaddrs.h at every API level but declares getifaddrs() only
+  # from API 24, so the header check is not the answer. Needs its own result
+  # variable: check_* skips when that is already set. Mirrors aconfigure.ac:263.
+  check_symbol_exists(getifaddrs ifaddrs.h PJ_HAS_GETIFADDRS)
+  if(NOT PJ_HAS_GETIFADDRS)
+    set(PJ_HAS_IFADDRS_H 0)
+  endif()
   check_symbol_exists(inet_aton arpa/inet.h PJ_SOCK_HAS_INET_ATON)
   check_symbol_exists(inet_pton arpa/inet.h PJ_SOCK_HAS_INET_PTON)
   check_symbol_exists(inet_ntop arpa/inet.h PJ_SOCK_HAS_INET_NTOP)
@@ -627,6 +633,18 @@ block(SCOPE_FOR VARIABLES)
     check_symbol_exists(pthread_set_name_np pthread_np.h
       PJ_HAS_PTHREAD_SET_NAME_NP
     )
+  else()
+    # glibc and bionic declare pthread_setname_np in pthread.h and ship no
+    # pthread_np.h, so the BSD-only probe above left every thread unnamed on
+    # Linux and Android. _GNU_SOURCE because glibc hides the declaration
+    # behind it, as os_core_unix.c already does before including pthread.h.
+    include(CMakePushCheckState)
+    cmake_push_check_state()
+    set(CMAKE_REQUIRED_DEFINITIONS -D_GNU_SOURCE)
+    check_symbol_exists(pthread_setname_np pthread.h
+      PJ_HAS_PTHREAD_SETNAME_NP
+    )
+    cmake_pop_check_state()
   endif()
 
   #
