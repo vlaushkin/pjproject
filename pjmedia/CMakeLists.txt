@@ -222,7 +222,7 @@ option(PJMEDIA_WITH_AUDIODEV "Enable audio device support" ON)
 # NULL audio backend
 cmake_dependent_option(PJMEDIA_WITH_AUDIODEV_NULL
   "Enable NULL audio device backend" ON
-  "PJMEDIA_WITH_AUDIO_DEVICE" OFF
+  "PJMEDIA_WITH_AUDIODEV" OFF
 )
 
 # Android Java Native Interface backend
@@ -798,7 +798,7 @@ target_compile_definitions(pjmedia-audiodev
   PUBLIC
     PJMEDIA_AUDIO_DEV_HAS_NULL_AUDIO=$<BOOL:${PJMEDIA_WITH_AUDIODEV_NULL}>
     PJMEDIA_AUDIO_DEV_HAS_ANDROID_JNI=$<BOOL:${PJMEDIA_WITH_AUDIODEV_JNI}>
-    PJMEDIA_AUDIO_DEV_HAS_OBOE=$<BOOL:${PJMEDIA_AUDIO_DEV_HAS_OBOE}>
+    PJMEDIA_AUDIO_DEV_HAS_OBOE=$<BOOL:${PJMEDIA_WITH_AUDIODEV_OBOE}>
     PJMEDIA_AUDIO_DEV_HAS_COREAUDIO=$<BOOL:${PJMEDIA_WITH_AUDIODEV_COREAUDIO}>
     PJMEDIA_AUDIO_DEV_HAS_ALSA=$<BOOL:${PJMEDIA_WITH_AUDIODEV_ALSA}>
     PJMEDIA_AUDIO_DEV_HAS_WMME=$<BOOL:${PJMEDIA_WITH_AUDIODEV_WMME}>
@@ -827,6 +827,8 @@ target_link_libraries(pjmedia-audiodev
     # audio backends
     $<$<BOOL:${PJMEDIA_WITH_AUDIODEV_ALSA}>:ALSA::ALSA>
     $<$<BOOL:${PJMEDIA_WITH_AUDIODEV_COREAUDIO}>:CoreAudio::CoreAudio>
+    # oboe_dev.cpp logs through __android_log_print
+    $<$<BOOL:${ANDROID}>:log>
     # TODO: add remaining APIs' dependencies
 )
 

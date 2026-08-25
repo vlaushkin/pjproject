@@ -205,3 +205,10 @@ if (NOT (WIN32 OR CYGWIN OR MINGW))
 elseif(NOT CMAKE_SYSTEM_NAME MATCHES "Windows(Store|Phone)")
   target_link_libraries(webrtc_aec3 PRIVATE winmm)
 endif()
+
+# rtc_base/logging.cc and checks.cc call __android_log_print. PUBLIC, because
+# pjmedia compiles echo_webrtc_aec3.cpp against these headers and links the
+# archive, so the symbol has to resolve in whatever pulls this in.
+if(ANDROID)
+  target_link_libraries(webrtc_aec3 PUBLIC log)
+endif()
