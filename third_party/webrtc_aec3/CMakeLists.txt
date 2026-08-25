@@ -185,14 +185,27 @@ elseif(WEBRTC_ARCH_SIMD STREQUAL "sse2")
     PRIVATE
       src/common_audio/resampler/sinc_resampler_sse.cc
       src/common_audio/third_party/ooura/fft_size_128/ooura_fft_sse2.cc
-      src/common_audio/resampler/sinc_resampler_avx2.cc
-      src/modules/audio_processing/aec3/adaptive_fir_filter_erl_avx2.cc
-      src/modules/audio_processing/aec3/adaptive_fir_filter_avx2.cc
-      src/modules/audio_processing/aec3/fft_data_avx2.cc
-      src/modules/audio_processing/aec3/matched_filter_avx2.cc
-      src/modules/audio_processing/aec3/vector_math_avx2.cc
-      src/modules/audio_processing/agc2/rnn_vad/rnn_vector_math_avx2.cc
   )
+
+  # These are the only files entitled to instructions above the SSE2 baseline:
+  # every entry point into them sits behind GetCPUInfo(kAVX2). The flags belong
+  # on the files, not on the target -- given -mavx2 -mfma the compiler is free
+  # to emit those instructions in code that has no such check in front of it.
+  set(WEBRTC_AEC3_AVX2_SOURCES
+    src/common_audio/resampler/sinc_resampler_avx2.cc
+    src/modules/audio_processing/aec3/adaptive_fir_filter_erl_avx2.cc
+    src/modules/audio_processing/aec3/adaptive_fir_filter_avx2.cc
+    src/modules/audio_processing/aec3/fft_data_avx2.cc
+    src/modules/audio_processing/aec3/matched_filter_avx2.cc
+    src/modules/audio_processing/aec3/vector_math_avx2.cc
+    src/modules/audio_processing/agc2/rnn_vad/rnn_vector_math_avx2.cc
+  )
+  target_sources(webrtc_aec3 PRIVATE ${WEBRTC_AEC3_AVX2_SOURCES})
+  if(NOT MSVC)
+    set_source_files_properties(${WEBRTC_AEC3_AVX2_SOURCES}
+      PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma"
+    )
+  endif()
 endif()
 
 # ##############################################################################

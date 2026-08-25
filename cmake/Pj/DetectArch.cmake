@@ -3,9 +3,9 @@ function(pj_canonicalize_arch arch out_arch)
 
   if(arch MATCHES "^(arm64|armv8|aarch64)")
     set(canonical_arch "arm64")
-  elseif(arch MATCHES "^arm7")
+  elseif(arch MATCHES "^armv?7")
     set(canonical_arch "armv7")
-  elseif(arch MATCHES "^arm4")
+  elseif(arch MATCHES "^armv?4")
     set(canonical_arch "armv4")
   elseif(arch MATCHES "^arm")
     set(canonical_arch "arm")
@@ -153,11 +153,11 @@ function(pj_detect_arch_simd_ext out_simd out_flags)
     ]=])
 
     if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang" AND UNIX)
-      if(CYGWIN OR MINGW)
-        set(simd_flags "-msse2")
-      else()
-        set(simd_flags "-mfma")
-      endif()
+      # -msse2, not -mfma: FMA3 needs Haswell, while the SIMD level actually
+      # detected here is SSE2 and the Android x86_64 ABI baseline stops at
+      # SSE4.2. The flag reached every WebRTC source, so the compiler was free
+      # to emit FMA in code paths with no runtime check in front of them.
+      set(simd_flags "-msse2")
     elseif(MSVC AND NOT (arch STREQUAL "x86_64" OR arch STREQUAL "x64"))
       set(simd_flags "/arch:SSE2")
     endif()
