@@ -51,8 +51,8 @@ if(@PJMEDIA_WITH_VIDEODEV_V4L2@)
   find_dependency(V4L2)
 endif()
 
-# AEC backends
-if(@PJMEDIA_WITH_SPEEX_AEC@)
+# SpeexDSP, when a system speex supplies the resampler or the echo canceller
+if(@PJMEDIA_NEEDS_SPEEXDSP@)
   find_dependency(SpeexDSP)
 endif()
 

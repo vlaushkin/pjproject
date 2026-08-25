@@ -62,7 +62,28 @@ cmake_dependent_option(PJMEDIA_WITH_SPEEX_AEC
   "Enable Speex Acoustic Echo Cancellation (AEC) support" ON
   "TARGET Pj::Dep::Speex" OFF
 )
-import_if_or_set(PJMEDIA_WITH_SPEEX_AEC OFF SpeexDSP)
+# Same split as the resampler above: for a system speex the echo canceller
+# lives in libspeexdsp, while the bundled copy keeps it in-tree and needs
+# nothing extra. Requiring the separate package unconditionally silently
+# disabled Speex AEC on every machine without libspeexdsp installed.
+if(PJMEDIA_WITH_SPEEX_AEC)
+  get_target_property(_pj_speex_provider Pj::Dep::Speex PJ_DEP_PROVIDER)
+  if(_pj_speex_provider STREQUAL "system")
+    import_if_or_set(PJMEDIA_WITH_SPEEX_AEC OFF SpeexDSP)
+    set(_pj_speex_aec_needs_speexdsp ${PJMEDIA_WITH_SPEEX_AEC})
+  endif()
+  unset(_pj_speex_provider)
+endif()
+
+# The installed PjConfig.cmake has to reach the same conclusion: whenever
+# pjmedia links SpeexDSP::SpeexDSP, consumers have to be able to find that
+# target, and whenever it does not, demanding the package would fail a build
+# that needs nothing from it.
+if(_pj_resample_speex_needs_speexdsp OR _pj_speex_aec_needs_speexdsp)
+  set(PJMEDIA_NEEDS_SPEEXDSP TRUE PARENT_SCOPE)
+else()
+  set(PJMEDIA_NEEDS_SPEEXDSP FALSE PARENT_SCOPE)
+endif()
 
 # WebRTC Acoustic Echo Cancellation (AEC)
 cmake_dependent_option(PJMEDIA_WITH_WEBRTC_AEC
@@ -480,9 +501,9 @@ target_compile_definitions(pjmedia
 
     # aec
     PJMEDIA_HAS_SPEEX_AEC=$<BOOL:${PJMEDIA_WITH_SPEEX_AEC}>
-    PJMEDIA_HAS_LIBWEBRTC=$<BOOL:${PJMEDIA_WITH_WEBRTC_AEC}>
+    PJMEDIA_HAS_WEBRTC_AEC=$<BOOL:${PJMEDIA_WITH_WEBRTC_AEC}>
     PJMEDIA_WEBRTC_AEC_USE_MOBILE=$<OR:$<BOOL:${ANDROID}>,$<BOOL:${WINDOWS_PHONE}>>
-    PJMEDIA_HAS_LIBWEBRTC_AEC3=$<BOOL:${PJMEDIA_WITH_WEBRTC_AEC3}>
+    PJMEDIA_HAS_WEBRTC_AEC3=$<BOOL:${PJMEDIA_WITH_WEBRTC_AEC3}>
 
     # video
     PJMEDIA_HAS_VIDEO=$<BOOL:${PJMEDIA_WITH_VIDEO}>
@@ -555,7 +576,8 @@ target_link_libraries(pjmedia
     $<$<BOOL:${_pj_resample_speex_needs_speexdsp}>:SpeexDSP::SpeexDSP>
 
     # aec
-    $<$<BOOL:${PJMEDIA_WITH_SPEEX_AEC}>:Pj::Dep::Speex;SpeexDSP::SpeexDSP>
+    $<$<BOOL:${PJMEDIA_WITH_SPEEX_AEC}>:Pj::Dep::Speex>
+    $<$<BOOL:${_pj_speex_aec_needs_speexdsp}>:SpeexDSP::SpeexDSP>
     $<$<BOOL:${PJMEDIA_WITH_WEBRTC_AEC}>:Pj::Dep::WebRTC>
     $<$<BOOL:${PJMEDIA_WITH_WEBRTC_AEC3}>:Pj::Dep::WebRTC_AEC3>
 
