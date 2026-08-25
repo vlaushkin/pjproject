@@ -231,9 +231,12 @@ cmake_dependent_option(PJMEDIA_WITH_AUDIODEV_JNI
   "PJMEDIA_WITH_AUDIODEV;ANDROID" OFF
 )
 
-# Android OBOE backend
+# Android OBOE backend. Default OFF even on Android: nothing here locates the
+# Oboe SDK, so oboe_dev.cpp cannot find oboe/Oboe.h. It read ON before only
+# because the define below was wired to the wrong variable, so the backend was
+# compiled out regardless of the option.
 cmake_dependent_option(PJMEDIA_WITH_AUDIODEV_OBOE
-  "Enable OBOE audio device backend" ON
+  "Enable OBOE audio device backend (requires an Oboe SDK)" OFF
   "PJMEDIA_WITH_AUDIODEV;ANDROID" OFF
 )
 
@@ -827,8 +830,8 @@ target_link_libraries(pjmedia-audiodev
     # audio backends
     $<$<BOOL:${PJMEDIA_WITH_AUDIODEV_ALSA}>:ALSA::ALSA>
     $<$<BOOL:${PJMEDIA_WITH_AUDIODEV_COREAUDIO}>:CoreAudio::CoreAudio>
-    # oboe_dev.cpp logs through __android_log_print
-    $<$<BOOL:${ANDROID}>:log>
+    # oboe_dev.cpp is the only source here that logs through __android_log_print
+    $<$<BOOL:${PJMEDIA_WITH_AUDIODEV_OBOE}>:log>
     # TODO: add remaining APIs' dependencies
 )
 

@@ -171,7 +171,12 @@ endif()
 
 include(DetectWebRTCParameters)
 target_compile_options(webrtc_aec3 PRIVATE ${WEBRTC_COMPILE_OPTIONS})
-target_compile_definitions(webrtc_aec3 PRIVATE ${WEBRTC_COMPILE_DEFINITIONS})
+# PUBLIC, not PRIVATE: the installed headers need these. apm_data_dumper.h
+# refuses to compile without WEBRTC_APM_DEBUG_DUMP, and platform_thread_types.h
+# declares its types only under WEBRTC_POSIX or WEBRTC_WIN, so anything that
+# includes them -- pjmedia's echo_webrtc_aec3.cpp, for one -- has to be given
+# the same set. The autoconf build passes it to pjmedia explicitly.
+target_compile_definitions(webrtc_aec3 PUBLIC ${WEBRTC_COMPILE_DEFINITIONS})
 
 # Include SIMD source files
 if(WEBRTC_ARCH_SIMD STREQUAL "neon")
